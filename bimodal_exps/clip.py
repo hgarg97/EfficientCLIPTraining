@@ -35,7 +35,6 @@ from scheduler import create_scheduler
 from optim import create_optimizer
 from zeroshot_transfer.classes import CIFAR10_CLASSES, CIFAR100_CLASSES, IMAGENET_CLASSES
 
-
 from tqdm import tqdm
 
 
@@ -661,6 +660,7 @@ if __name__ == '__main__':
     parser.add_argument('--sogclr_gamma', default=0.8, type=float)
     parser.add_argument('--rho_I', default=8.0, type=float)
     parser.add_argument('--rho_T', default=8.0, type=float)
+    parser.add_argument('--rho_init', default=6.0, type=float)
     parser.add_argument('--eta_init', default=0.001, type=float)
     parser.add_argument('--tau_init', default=0.01, type=float)
     parser.add_argument('--beta_u', default=0.9, type=float)
