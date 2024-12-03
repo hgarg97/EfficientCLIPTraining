@@ -715,4 +715,109 @@ class onlineCLR_Loss(nn.Module):
         return loss
 
 
+class NTXentLoss(nn.Module):
+    def __init__(self, temperature=0.5):
+        super(NTXentLoss, self).__init__()
+        self.temperature = temperature
+
+    def forward(self, features1, features2):
+        # Normalize features
+        features1 = F.normalize(features1, dim=-1)
+        features2 = F.normalize(features2, dim=-1)
+
+        # Compute cosine similarities
+        logits = torch.mm(features1, features2.T) / self.temperature
+        labels = torch.arange(features1.size(0)).to(features1.device)
+
+        # Cross-entropy loss
+        loss = F.cross_entropy(logits, labels)
+        return loss
+
+
+class InfoNCELoss(nn.Module):
+    def __init__(self, temperature=0.07):
+        super(InfoNCELoss, self).__init__()
+        self.temperature = temperature
+
+    def forward(self, features1, features2):
+        # Normalize features
+        features1 = F.normalize(features1, dim=-1)
+        features2 = F.normalize(features2, dim=-1)
+
+        # Compute similarity
+        logits = torch.mm(features1, features2.T) / self.temperature
+        labels = torch.arange(features1.size(0)).to(features1.device)
+
+        # Calculate loss
+        loss = F.cross_entropy(logits, labels)
+        return loss
+
+class BarlowTwinsLoss(nn.Module):
+    def __init__(self, lambd=0.005):
+        super(BarlowTwinsLoss, self).__init__()
+        self.lambd = lambd
+
+    def forward(self, features1, features2):
+        # Normalize features
+        features1 = F.normalize(features1, dim=-1)
+        features2 = F.normalize(features2, dim=-1)
+
+        # Compute cross-correlation matrix
+        c = torch.mm(features1.T, features2) / features1.size(0)
+
+        # Diagonal elements should be close to 1, off-diagonal close to 0
+        c_diff = c - torch.eye(c.size(0), device=c.device)
+        loss = (c_diff ** 2).sum() + self.lambd * (c.mean(dim=0) ** 2).sum()
+        return loss
+
+class SupConLoss(nn.Module):
+    def __init__(self, temperature=0.1):
+        super(SupConLoss, self).__init__()
+        self.temperature = temperature
+
+    def forward(self, features, labels):
+        # Normalize features
+        features = F.normalize(features, dim=-1)
+
+        # Create a mask for positive pairs based on labels
+        mask = labels.unsqueeze(1) == labels.unsqueeze(0)
+
+        # Compute similarity logits
+        logits = torch.mm(features, features.T) / self.temperature
+        logits = logits - torch.max(logits, dim=1, keepdim=True)[0]
+
+        # Exponential logits and mask
+        exp_logits = torch.exp(logits)
+        positive_pairs = exp_logits * mask
+
+        # Calculate supervised contrastive loss
+        loss = -torch.log(positive_pairs.sum(dim=1) / exp_logits.sum(dim=1)).mean()
+        return loss
+
+class TripletMarginLoss(nn.Module):
+    def __init__(self, margin=1.0):
+        super(TripletMarginLoss, self).__init__()
+        self.margin = margin
+        self.loss_fn = nn.TripletMarginLoss(margin=margin)
+
+    def forward(self, anchor, positive, negative):
+        return self.loss_fn(anchor, positive, negative)
+
+class ArcFaceLoss(nn.Module):
+    def __init__(self, scale=30, margin=0.5):
+        super(ArcFaceLoss, self).__init__()
+        self.scale = scale
+        self.margin = margin
+
+    def forward(self, logits, labels):
+        # Normalize logits
+        logits = F.normalize(logits, dim=-1)
+
+        # Add margin
+        theta = torch.acos(torch.clamp(logits, -1.0, 1.0))
+        arc_logits = torch.cos(theta + self.margin)
+
+        # Scale and compute loss
+        loss = F.cross_entropy(self.scale * arc_logits, labels)
+        return loss
 
