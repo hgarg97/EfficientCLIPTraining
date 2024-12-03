@@ -229,8 +229,10 @@ class CLIP(nn.Module):
             info_dict['avg_image_tau'] = 0.0
             info_dict['avg_text_tau'] = 0.0
         elif self.ita_type == 'infonce':
-            self.criterion = InfoNCELoss(temperature=self.temp)
-
+            # Pass normalized features to InfoNCE loss
+            loss_ita = self.criterion(image_feat, text_feat)
+            info_dict['avg_image_tau'] = 0.0
+            info_dict['avg_text_tau'] = 0.0
 
 
         else:
